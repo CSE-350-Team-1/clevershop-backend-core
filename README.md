@@ -84,11 +84,9 @@ This command will:
 ### Update model
 - Pull requests must adhere to the following requirements before approval:
     - At least 1 approving review
-    - CI checks passed; run the following commands for verification:
+    - CI checks passed; run the following command for verification:
         - `black .`
-        - `mypy .` (not enforced)
-        > Install `black`, and `mypy` using pip
-- All files and folders beside `.github/`, `README.md`, `AGENTS.md`, `.gitkeep`, `Dockerfile`, , `__init__.py`, and `.gitignore` must adhere to kebab-case.
+        > Run `pip install black` if not installed already
 
 ### Branching rules
 - The use of feature branches is mandatory.
