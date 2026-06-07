@@ -56,6 +56,11 @@ jobs:
               continue
             fi
 
+            # Skip Git reference files
+            if [[ "$path" == ".git"* ]] || [[ "$name" == "FETCH_HEAD" ]] || [[ "$name" == "HEAD" ]] || [[ "$name" == "MERGE_HEAD" ]]; then
+              continue
+            fi
+            
             # Validate kebab-case
             if ! [[ "$name" =~ $kebab_regex ]]; then
               echo "::error file=$path::'$name' must use kebab-case."
