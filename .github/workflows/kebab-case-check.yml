@@ -1,0 +1,71 @@
+name: Enforce Kebab-Case Naming
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  enforce-kebab-case:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate naming rules
+        run: |
+          set -euo pipefail
+          shopt -s globstar dotglob nullglob
+
+          # Allowed names that bypass kebab-case
+          allowed_exact=(
+            "README.md"
+            "AGENTS.md"
+            ".gitkeep"
+            "Dockerfile"
+            "__init__.py"
+            ".gitignore"
+          )
+
+          # Allowed directories
+          allowed_dirs=(
+            ".github"
+          )
+
+          kebab_regex='^[a-z0-9]+(-[a-z0-9]+)*(\.[a-z0-9]+(-[a-z0-9]+)*)?$'
+          fail=0
+
+          for path in **; do
+            # Skip root
+            [[ "$path" == "." ]] && continue
+
+            name="$(basename "$path")"
+
+            # Skip hidden files/dirs except .gitignore and .gitkeep (handled above)
+            if [[ "$name" == .* ]] && [[ "$name" != ".gitignore" && "$name" != ".gitkeep" ]]; then
+              continue
+            fi
+
+            # Skip allowed exact matches
+            if [[ " ${allowed_exact[*]} " =~ " $name " ]]; then
+              continue
+            fi
+
+            # Skip allowed directories
+            if [[ -d "$path" ]] && [[ " ${allowed_dirs[*]} " =~ " $name " ]]; then
+              continue
+            fi
+
+            # Validate kebab-case
+            if ! [[ "$name" =~ $kebab_regex ]]; then
+              echo "::error file=$path::'$name' must use kebab-case."
+              fail=1
+            fi
+          done
+
+          if [[ $fail -ne 0 ]]; then
+            echo "Kebab-case validation failed."
+            exit 1
+          fi
+
+          echo "Kebab-case validation passed."
