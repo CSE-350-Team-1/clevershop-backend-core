@@ -47,6 +47,8 @@ This command will:
 - Install all dependencies
 - Create a Docker image tagged as `clevershop-backend`
 
+> Container must build successfully to pass CI checks
+
 ### Running the Container
 
 To run the container, execute:
@@ -85,9 +87,9 @@ This command will:
     - CI checks passed; run the following commands for verification:
         - `black .`
         - `bandit .`
-        - `mypy .`
+        - `mypy .` (not enforced)
         > Install `black`, `bandit`, and `mypy` using pip
-- All files and folders beside `.github/`, `README.md`, `AGENTS.md`, `.gitkeep`, `Dockerfile`, , `__init__.py`, and `.gitignore` must adhere to kebab-case. (not enforced)
+- All files and folders beside `.github/`, `README.md`, `AGENTS.md`, `.gitkeep`, `Dockerfile`, , `__init__.py`, and `.gitignore` must adhere to kebab-case.
 
 ### Branching rules
 - The use of feature branches is mandatory.
