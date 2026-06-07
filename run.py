@@ -4,8 +4,6 @@ import uvicorn
 from src.errors.errors import InitError
 from src.main import app
 
-
-
 if __name__ == "__main__":
 
     try:
