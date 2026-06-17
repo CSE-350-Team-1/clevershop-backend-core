@@ -42,7 +42,7 @@ jobs:
 
             # Run pytest against the test directory
             echo "Running pytest..."
-            pytest ./test -q
+            PYTHONPATH="${PWD}" pytest ./test -q
           else
             echo "No Python tests found in ./test — skipping test run."
           fi
