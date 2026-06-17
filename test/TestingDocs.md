@@ -51,10 +51,10 @@ bash
 python -m pytest test/ -v
 Run only unit tests:
 bash
-python -m pytest test/unit_testing.py -v
+python -m pytest test/test_unit.py -v
 Run only integration tests:
 bash
-python -m pytest test/integration_test.py -v
+python -m pytest test/test_integration.py -v
 Less verbose output:
 bash
 python -m pytest test/
