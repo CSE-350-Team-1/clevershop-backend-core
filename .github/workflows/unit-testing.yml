@@ -26,7 +26,7 @@ jobs:
           set -euo pipefail
 
           # Detect test files in root/test
-          if [ -d "./test" ] && ls ./test/*.py >/dev/null 2>&1; then
+          if [ -d "./test" ] && find ./test -name "*.py" | grep -q .; then
             echo "Test files detected in ./test — preparing to run tests."
 
             # Install dependencies if requirements.txt exists, otherwise ensure pytest is available

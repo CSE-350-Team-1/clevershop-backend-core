@@ -3,7 +3,6 @@ This is a shared configuration for both the integration tests and unit tests.
 If your tests fail, and you don't know why, you probably broke something here.
 """
 
-
 import pytest
 from pathlib import Path
 from fastapi.testclient import TestClient
@@ -13,15 +12,18 @@ from src.middleware.error_middleware import LOG_PATH as ORIGINAL_LOG_PATH
 # Store the original LOG_PATH globally so we can restore it later
 original_log_path = ORIGINAL_LOG_PATH
 
+
 # Add the test route once to the app (global) and keep it for all tests.
 # We'll check if it already exists to avoid duplicates.
 def add_test_route():
     for route in app.router.routes:
         if route.path == "/raise-error":
             return  # already present
+
     @app.get("/raise-error")
     async def raise_error():
         raise Exception("Intentional test exception")
+
 
 add_test_route()
 
@@ -40,6 +42,7 @@ def client(temp_log_path):
     """
     # Patch the LOG_PATH in the error_middleware module
     import src.middleware.error_middleware
+
     src.middleware.error_middleware.LOG_PATH = temp_log_path
 
     yield TestClient(app)

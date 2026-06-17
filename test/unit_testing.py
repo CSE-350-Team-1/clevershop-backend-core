@@ -71,7 +71,9 @@ def test_invalid_correlation_id(client: TestClient, temp_log_path: Path, clear_l
 
 
 # TC‑05: Confirms error logs contain all required fields for monitoring/debugging.
-def test_unhandled_exception_logging(client: TestClient, temp_log_path: Path, clear_log):
+def test_unhandled_exception_logging(
+    client: TestClient, temp_log_path: Path, clear_log
+):
     client.get("/raise-error")
 
     assert temp_log_path.exists()
@@ -89,6 +91,7 @@ def test_unhandled_exception_logging(client: TestClient, temp_log_path: Path, cl
 def test_log_file_creation(client: TestClient, temp_log_path: Path):
     if temp_log_path.parent.exists():
         import shutil
+
         shutil.rmtree(temp_log_path.parent)
 
     assert not temp_log_path.parent.exists()
