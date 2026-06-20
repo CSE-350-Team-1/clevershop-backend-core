@@ -1,0 +1,45 @@
+name: Branch Flow Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+    branches:
+      - main
+      - qa
+      - dev
+
+jobs:
+  validate-branch-flow:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate PR branch flow
+        run: |
+          SOURCE="${{ github.head_ref }}"
+          TARGET="${{ github.base_ref }}"
+
+          echo "Source branch: $SOURCE"
+          echo "Target branch: $TARGET"
+
+          if [ "$TARGET" = "main" ]; then
+            if [ "$SOURCE" != "qa" ]; then
+              echo "ERROR: Only qa can merge into main."
+              exit 1
+            fi
+          fi
+
+          if [ "$TARGET" = "qa" ]; then
+            if [ "$SOURCE" != "dev" ]; then
+              echo "ERROR: Only dev can merge into qa."
+              exit 1
+            fi
+          fi
+
+          if [ "$TARGET" = "dev" ]; then
+            if [ "$SOURCE" = "main" ] || [ "$SOURCE" = "qa" ]; then
+              echo "ERROR: main and qa should not merge into dev."
+              exit 1
+            fi
+          fi
+
+          echo "Branch flow is valid."
