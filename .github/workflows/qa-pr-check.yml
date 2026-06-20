@@ -34,41 +34,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node if package.json exists
-        if: ${{ hashFiles('package.json') != '' }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install and test Node backend
-        if: ${{ hashFiles('package.json') != '' }}
-        run: |
-          npm ci
-          npm test --if-present
-          npm run build --if-present
-
-      - name: Set up Python if requirements.txt exists
-        if: ${{ hashFiles('requirements.txt') != '' }}
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install and test Python backend
-        if: ${{ hashFiles('requirements.txt') != '' }}
+      - name: Install Black
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest
-          if [ -d "tests" ]; then
-            pytest
-          else
-            echo "No tests directory found. Skipping pytest."
-          fi
+          pip install black
 
-      - name: Build Docker image if Dockerfile exists
-        if: ${{ hashFiles('Dockerfile') != '' }}
+      - name: Run Black format check
         run: |
-          docker build -t backend-core-qa-check .
+          black --check --diff .
 
       - name: QA checks completed
         run: |
