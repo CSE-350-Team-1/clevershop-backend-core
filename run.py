@@ -6,7 +6,6 @@ from src.errors.errors import InitError, ShutDownError
 from src.main import app
 import src.core as core
 
-
 if __name__ == "__main__":
     try:
         port = int(os.getenv("PORT", "8000"))

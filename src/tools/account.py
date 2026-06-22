@@ -5,8 +5,8 @@ from src.rbac.rbac import RBAC_ROLES
 
 # SQL Queries are run here
 async def db_rbac_check(username, task, cursor) -> bool:
-    user_role = ''
-    cursor.execute(f'select Role from People where username = %s', (username,))
+    user_role = ""
+    cursor.execute(f"select Role from People where username = %s", (username,))
 
     for row in cursor:
         user_role = row[0]
@@ -16,9 +16,11 @@ async def db_rbac_check(username, task, cursor) -> bool:
     return True
 
 
-
 async def db_sign_in(credentials, cursor) -> bool:
-    cursor.execute(f'select * from People where username = %s AND password = %s', (credentials['username'], credentials['password']))
+    cursor.execute(
+        f"select * from People where username = %s AND password = %s",
+        (credentials["username"], credentials["password"]),
+    )
 
     for row in cursor:
         return True
@@ -26,20 +28,21 @@ async def db_sign_in(credentials, cursor) -> bool:
     return False
 
 
-
 async def db_sign_up(credentials, cursor):
     response = {}
 
-    cursor.execute(f'select * from People where username = %s', (credentials['username']))
+    cursor.execute(
+        f"select * from People where username = %s", (credentials["username"])
+    )
     for row in cursor:
-        response['username'] = False
+        response["username"] = False
 
-    cursor.execute(f'select * from People where email = %s', (credentials['email']))
+    cursor.execute(f"select * from People where email = %s", (credentials["email"]))
     for row in cursor:
-        response['email'] = False
+        response["email"] = False
 
-    if response.get('username') is False or response.get('email') is False:
-        response['status'] = False
+    if response.get("username") is False or response.get("email") is False:
+        response["status"] = False
         return response
-    
-    response['username'] = response['email'] = response['status'] = True
+
+    response["username"] = response["email"] = response["status"] = True
