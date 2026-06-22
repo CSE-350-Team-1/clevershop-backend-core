@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  app:
+    build: .
+    image: clevershop-backend:local
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+# Notes:
+# - Create a `.env` from `.env.example` and fill in secrets before running `docker compose up`.
+# - Do NOT commit your `.env` file.

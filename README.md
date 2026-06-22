@@ -16,16 +16,26 @@ clevershop-backend-process-template/
 │   │   ├── __init__.py
 │   │   └── errors.py              # Custom error definitions
 │   ├── middleware/                # Middleware components
+│   │   ├── __init__.py
+│   │   ├── authorization_middleware.py
 │   │   ├── context_middleware.py  # Request context management middleware
 │   │   └── error_middleware.py    # Error handling middleware
-│   └── tools/                     # Extension point for additional business utilities (empty)
+│   ├── rbac/                      # RBAC helpers
+│   │   ├── __init__.py
+│   │   └── rbac.py
+│   └── tools/                     # Extension point for additional business utilities
+│       ├── __init__.py
+│       └── account.py
 ├── logs/                          # Server logs (automatically generated)
-├── test/                          # Test suite (empty)
+│   └── error-log.jsonl
+├── test/                          # Test suite
 ├── run.py                         # Application runner script
 ├── Dockerfile                     # Container configuration
+├── docker-compose.yml             # Compose configuration
+├── requirements.txt               # Python dependencies
 ├── AGENTS.md                      # Agent documentation
 ├── .gitignore                     # Ignored files and folders
-└──README.md                       # This file
+└── README.md                       # This file
 ```
 
 ## Build and Run Instructions
@@ -49,35 +59,37 @@ This command will:
 
 > Container must build successfully to pass CI checks
 
-### Running the Container
+### Docker Compose and .env
 
-To run the container, execute:
+Sensitive configuration (DB credentials, passwords, etc.) should not be committed to the repository. Use an `.env` file (copy from `.env.example`) or CI/CD/secret manager to inject secrets at runtime.
 
-```bash
-docker run -e PORT=8000 -p 8000:8000 clevershop-backend
-```
+Examples:
 
-Optionally, mount a local logs directory so container logs persist outside the container:
+- Using an env file with `docker run`:
 
 ```bash
-docker run -e PORT=8000 -p 8000:8000 -v $(pwd)/logs:/app/logs clevershop-backend
+docker run --env-file .env -v "$(pwd)/logs:/app/logs" -p 8000:8000 clevershop-backend
+
 ```
 
-When mounting logs from multiple containers, avoid file naming conflicts by using separate host directories or distinct file names for each container.
-> `LOG PATH` is specified in `error_middleware.py`
+- Passing explicit environment variables (not recommended for secrets):
 
-This command will:
-- Start a new container from the `clevershop-backend` image
-- Set the `PORT` environment variable to `8000`
-- Map port `8000` from the container to port `8000` on your local machine
-- Mount a local logs directory
-- Make the service accessible at `http://localhost:8000`
+```bash
+docker run -e DBHOST=yourhost -e DBNAME=yourdb -e DBUSER=youruser -e DBPASSWORD=yourpass -v "$(pwd)/logs:/app/logs" -p 8000:8000 clevershop-backend
+```
 
-> PORT values are adjustable so long as all three values match
+- Using `docker compose` (reads `.env` automatically when `env_file` is configured):
 
-### Environment Variables
+```bash
+docker compose up --build
+```
 
-- `PORT`: The port on which the backend service will listen (default: 8000)
+Notes:
+- If you use `docker compose`, the provided `docker-compose.yml` already mounts `./logs` to `/app/logs`.
+
+Notes:
+- Copy `.env.example` to `.env` and fill real values locally. Do NOT commit `.env`.
+- For production, prefer using a secrets manager, Kubernetes Secrets, or your CI/CD provider's secret store.
 
 ## Repository rules
 
