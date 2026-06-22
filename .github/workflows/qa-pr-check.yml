@@ -1,0 +1,53 @@
+name: QA Pull Request Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+    branches:
+      - qa
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qa-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  qa-checks:
+    name: QA Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate QA PR source branch
+        run: |
+          echo "Source branch: ${{ github.head_ref }}"
+          echo "Target branch: ${{ github.base_ref }}"
+
+          if [ "${{ github.head_ref }}" != "dev" ]; then
+            echo "ERROR: Pull requests into qa must come from dev."
+            exit 1
+          fi
+
+          echo "Valid QA promotion: dev -> qa"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Black
+        run: |
+          python -m pip install --upgrade pip
+          pip install black
+
+      - name: Run Black format check
+        run: |
+          black --check --diff .
+
+      - name: QA checks completed
+        run: |
+          echo "QA pull request checks completed successfully."
