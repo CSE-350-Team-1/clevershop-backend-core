@@ -27,7 +27,7 @@ def db_operation(func):
         global cursor
         cursor = conn.cursor()
         try:
-            result = await func(*args, **kwargs)
+            result = await func(cursor, *args, **kwargs)
             conn.commit()
             return result
         except Exception:
@@ -40,15 +40,15 @@ def db_operation(func):
 
 
 @db_operation
-async def verify_rbac(username: str, task: str) -> bool:
+async def verify_rbac(cursor, username: str, task: str) -> bool:
     return await db_rbac_check(username, task, cursor)
 
 
 @db_operation
-async def sign_in(credentials: dict) -> bool:
+async def sign_in(cursor, credentials: dict) -> bool:
     return await db_sign_in(credentials, cursor)
 
 
 @db_operation
-async def sign_up(credentials: dict) -> dict:
+async def sign_up(cursor, credentials: dict) -> dict:
     return await db_sign_up(credentials, cursor)
