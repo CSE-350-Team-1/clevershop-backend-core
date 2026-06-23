@@ -2,9 +2,9 @@ name: Run Python tests if present
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "dev" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "dev" ]
   workflow_dispatch:
 
 jobs:
@@ -25,8 +25,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Detect test files in root/test
-          if [ -d "./test" ] && ls ./test/*.py >/dev/null 2>&1; then
+          # Detect test files in root/test or subdirectories
+          if [ -d "./test" ] && find ./test -name "*.py" | grep -q .; then
             echo "Test files detected in ./test — preparing to run tests."
 
             # Install dependencies if requirements.txt exists, otherwise ensure pytest is available
@@ -42,7 +42,7 @@ jobs:
 
             # Run pytest against the test directory
             echo "Running pytest..."
-            pytest ./test -q
+            PYTHONPATH="${PWD}" python -m pytest ./test -v
           else
             echo "No Python tests found in ./test — skipping test run."
           fi

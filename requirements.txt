@@ -1,3 +1,6 @@
 fastapi
+httpx2
+pytest
+requests
 uvicorn[standard]
 psycopg[binary]
