@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 import time
 import pytest
 import requests
@@ -14,7 +15,7 @@ def test_port_binding():
     port = 9000
     # Start the server as a subprocess
     proc = subprocess.Popen(
-        ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", str(port)],
+        [sys.executable, "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", str(port)],
         env={**os.environ, "PORT": str(port)},
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,

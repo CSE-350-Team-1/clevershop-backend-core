@@ -21,7 +21,9 @@ async def create_session(username: str) -> str:
 
 
 async def end_session(username: str):
-    _sessions.pop(username, None)
+    expired_keys = [sid for sid, session in _sessions.items() if session.username == username]
+    for sid in expired_keys:
+        _sessions.pop(sid, None)
 
 
 async def validate_token(access_token: str) -> tuple[bool, str]:

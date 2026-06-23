@@ -14,6 +14,7 @@ REQUIRED_ENDPOINT_PERMS = {
     "/account/change_manager_email": ["Manipulate_manager"],
     "/account/add_manager": ["Manipulate_manager"],
     "/account/delete_manager": ["Manipulate_manager"],
+    "/account/sign_out": [],
     "/service/get_items": [],
     "/service/list_own_lists": ["Manipulate_self"],
     "/service/get_own_list": ["Manipulate_self"],

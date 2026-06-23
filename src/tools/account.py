@@ -46,3 +46,4 @@ async def db_sign_up(credentials, cursor):
         return response
 
     response["username"] = response["email"] = response["status"] = True
+    return response

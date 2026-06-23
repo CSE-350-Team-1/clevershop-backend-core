@@ -6,6 +6,7 @@ If your tests fail, and you don't know why, you probably broke something here.
 import pytest
 from pathlib import Path
 from fastapi.testclient import TestClient
+import src.main as main_module
 from src.main import app
 from src.middleware.error_middleware import LOG_PATH as ORIGINAL_LOG_PATH
 
@@ -23,6 +24,8 @@ def add_test_route():
     @app.get("/raise-error")
     async def raise_error():
         raise Exception("Intentional test exception")
+
+    main_module.NO_AUTH_ROUTES.append("/raise-error")
 
 
 add_test_route()
