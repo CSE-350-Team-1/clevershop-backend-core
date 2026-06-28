@@ -47,3 +47,17 @@ async def db_sign_up(credentials, cursor):
 
     response["username"] = response["email"] = response["status"] = True
     return response
+
+
+async def db_change_own_email(credentials, cursor) -> bool:
+    cursor.execute(
+        f"select * from People where email = %s", (credentials.get('email'))
+    )
+    for row in cursor:
+        return False
+    
+    cursor.execute(
+        f"update People set email = %s where username = %s", (credentials.get('email'), credentials.get('username'))
+    )
+
+    return True

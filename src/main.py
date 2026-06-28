@@ -3,7 +3,7 @@ import uuid
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from src.core import sign_in, sign_up, verify_rbac
+from src.core import sign_in, sign_up, verify_rbac, change_own_email
 from src.middleware.authorization_middleware import (
     create_session,
     end_session,
@@ -176,3 +176,25 @@ async def account_sign_out(request: Request) -> dict:
     await end_session(request.state.username)
 
     return {"Status": True}
+
+
+@app.post("/account/change_own_email")
+async def account_change_own_email(request: Request) -> dict:
+    """Expects JSON payload
+    email: str
+    """
+
+    change_own_email_payload = await request.json()
+
+    if change_own_email_payload.get('email') is None or change_own_email_payload.get('email') == '':
+        return JSONResponse(status_code= 400, content = {'error' : 'Invalid email'})
+
+    change_own_email_result = await change_email({'username' : request.state.username, 'email' : change_own_email_payload})
+
+    if change_own_email_result is False:
+        return JSONResponse(status_code = 409, content = {'error' : 'email already exists'})
+    
+    return {'status' : True}
+
+
+

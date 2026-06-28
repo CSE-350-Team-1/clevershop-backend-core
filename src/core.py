@@ -2,7 +2,7 @@ import asyncio
 import os
 import psycopg
 
-from src.tools.account import db_rbac_check, db_sign_in, db_sign_up
+from src.tools.account import db_rbac_check, db_sign_in, db_sign_up, db_change_own_email
 from src.errors.errors import DBError
 
 conn_str = None
@@ -52,3 +52,8 @@ async def sign_in(cursor, credentials: dict) -> bool:
 @db_operation
 async def sign_up(cursor, credentials: dict) -> dict:
     return await db_sign_up(credentials, cursor)
+
+
+@db_operation
+async def change_own_email(cursor, credentials : dict) -> bool:
+    return await db_change_own_email(credentials, cursor)
