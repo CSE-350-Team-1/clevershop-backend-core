@@ -61,3 +61,17 @@ async def db_change_own_email(credentials, cursor) -> bool:
     )
 
     return True
+
+
+async def db_delete_own_account(username, cursor):
+    cursor.execute(
+        f"delete from List_Items where username = %s", (username)
+    )
+
+    cursor.execute(
+        f"delete from Lists where username = %s", (username)
+    )
+
+    cursor.execute(
+        f"delete from People where username = %s", (username)
+    )
