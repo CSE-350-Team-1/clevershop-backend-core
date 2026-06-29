@@ -154,9 +154,9 @@ async def account_sign_up(
 
     sign_up_payload = await request.json()
     required_fields = {"email", "username", "password"}
-    if not isinstance(sign_up_payload, dict) or not required_fields.issubset(
+    if (not isinstance(sign_up_payload, dict) or not required_fields.issubset(
         sign_up_payload.keys()
-    ):
+    )) and all(item != "" for item in sign_up_payload.values()):
         return JSONResponse(
             status_code=400,
             content={
@@ -164,6 +164,7 @@ async def account_sign_up(
             },
         )
 
+    sign_up_payload['role'] = 'user'
     sign_up_result = await sign_up(sign_up_payload)
 
     return sign_up_result
@@ -205,3 +206,38 @@ async def account_delete_own_account(request: Request):
     await delete_own_account(request.state.username)
 
     return {'status' : True}
+
+
+@app.post("/account/add_user")
+async def account_add_user(request: Request):
+    """Expects JSON payload
+    username: str
+    email: str
+    password: str"""
+
+    add_user_payload = await request.json()
+
+    required_fields = {"email", "username", "password"}
+    if (not isinstance(add_user_payload, dict) or not required_fields.issubset(
+        add_user_payload.keys()
+    )) and all(item != "" for item in add_user_payload.values()):
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": "Invalid payload; expected JSON{email: str, username: str, password: str} with non-empty values"
+            },
+        )
+    
+    add_user_payload['role'] = 'user'
+    add_user_payload_return = await sign_up(credentials = add_user_payload)
+
+    if add_user_payload_return.get('status') == False:
+        return JSONResponse(status=409, content = add_user_payload_return)
+    
+    return add_user_payload_return
+
+
+# TODO:
+# add input validity checks to sign_up
+# add account_delete_user
+# work on service endpoint

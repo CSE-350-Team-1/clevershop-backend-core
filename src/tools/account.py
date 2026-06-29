@@ -46,6 +46,8 @@ async def db_sign_up(credentials, cursor):
         return response
 
     response["username"] = response["email"] = response["status"] = True
+
+    cursor.execute(f"insert into People(username, email, password, role) values(%s, %s, %s, %s)", (credentials.get('username'), credentials.get('email'), credentials.get('password'), credentials.get('role')))
     return response
 
 
@@ -75,3 +77,5 @@ async def db_delete_own_account(username, cursor):
     cursor.execute(
         f"delete from People where username = %s", (username)
     )
+    
+
