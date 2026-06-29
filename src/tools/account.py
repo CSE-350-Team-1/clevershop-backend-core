@@ -32,12 +32,12 @@ async def db_sign_up(credentials, cursor):
     response = {}
 
     cursor.execute(
-        f"select * from People where username = %s", (credentials["username"])
+        f"select * from People where username = %s", (credentials["username"],)
     )
     for row in cursor:
         response["username"] = False
 
-    cursor.execute(f"select * from People where email = %s", (credentials["email"]))
+    cursor.execute(f"select * from People where email = %s", (credentials["email"],))
     for row in cursor:
         response["email"] = False
 
@@ -53,7 +53,7 @@ async def db_sign_up(credentials, cursor):
 
 async def db_change_own_email(credentials, cursor) -> bool:
     cursor.execute(
-        f"select * from People where email = %s", (credentials.get('email'))
+        f"select * from People where email = %s", (credentials.get('email'),)
     )
     for row in cursor:
         return False
@@ -67,35 +67,35 @@ async def db_change_own_email(credentials, cursor) -> bool:
 
 async def db_delete_own_account(username, cursor):
     cursor.execute(
-        f"delete from List_Items where username = %s", (username)
+        f"delete from List_Items where username = %s", (username,)
     )
 
     cursor.execute(
-        f"delete from Lists where username = %s", (username)
+        f"delete from Lists where username = %s", (username,)
     )
 
     cursor.execute(
-        f"delete from People where username = %s", (username)
+        f"delete from People where username = %s", (username,)
     )
 
 
 async def db_delete_user(username, cursor):
-    cursor.execute(f"select * from People where username = %s and role = 'User'", (username))
+    cursor.execute(f"select * from People where username = %s and role = 'User'", (username,))
     found_flag = False
     for row in cursor:
         found_flag = True
 
     if found_flag:
         cursor.execute(
-            f"delete from List_Items where username = %s", (username)
+            f"delete from List_Items where username = %s", (username,)
         )
 
         cursor.execute(
-            f"delete from Lists where username = %s", (username)
+            f"delete from Lists where username = %s", (username,)
         )
 
         cursor.execute(
-            f"delete from People where username = %s", (username)
+            f"delete from People where username = %s", (username,)
         )
 
         return {'status' : True}

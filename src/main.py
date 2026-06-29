@@ -124,11 +124,12 @@ async def account_sign_in(
         not isinstance(input_credentials, dict)
         or "username" not in input_credentials
         or "password" not in input_credentials
+        or not all(item != "" for item in [input_credentials.get("username"), input_credentials.get("password")])
     ):
         return JSONResponse(
             status_code=400,
             content={
-                "error": "Invalid payload; expected JSON{username: str, password: str}"
+                "error": "Invalid payload; expected JSON{username: str, password: str} with non-empty values"
             },
         )
 
@@ -187,10 +188,10 @@ async def account_change_own_email(request: Request) -> dict:
 
     change_own_email_payload = await request.json()
 
-    if not isinstance(change_own_email, dict) or not {'email'}.issubset(change_own_email_payload) or change_own_email_payload.get('email') != '':
+    if not isinstance(change_own_email_payload, dict) or not {'email'}.issubset(change_own_email_payload) or change_own_email_payload.get('email') == '':
         return JSONResponse(status_code= 400, content = {'error' : 'Invalid payload; expected JSON{email: str} with non-empty values'})
 
-    change_own_email_result = await change_own_email({'username' : request.state.username, 'email' : change_own_email_payload})
+    change_own_email_result = await change_own_email({'username' : request.state.username, 'email' : change_own_email_payload.get('email')})
 
     if change_own_email_result is False:
         return JSONResponse(status_code = 409, content = {'error' : 'Email already exists'})
@@ -232,7 +233,7 @@ async def account_add_user(request: Request):
     add_user_payload_return = await sign_up(credentials = add_user_payload)
 
     if add_user_payload_return.get('status') == False:
-        return JSONResponse(status=409, content = add_user_payload_return)
+        return JSONResponse(status_code=409, content = add_user_payload_return)
     
     return add_user_payload_return
 
@@ -242,9 +243,9 @@ async def account_delete_user(request: Request):
     """Expects JSON payload
     username: str"""
 
-    delete_user_payload = request.json()
+    delete_user_payload = await request.json()
 
-    if (not isinstance(delete_user_payload, dict) or not {"username"}.issubset(delete_user_payload.keys())) or not delete_user_payload.get('username') != '':
+    if (not isinstance(delete_user_payload, dict) or not {"username"}.issubset(delete_user_payload.keys())) or delete_user_payload.get('username') == '':
         return JSONResponse(
             status_code=400,
             content={
@@ -254,7 +255,7 @@ async def account_delete_user(request: Request):
     
     delete_user_response = await delete_user(delete_user_payload.get('username'))
 
-    if await delete_user_response.get('status') == False:
+    if delete_user_response.get('status') == False:
         return JSONResponse(status_code = 404, content = {'error' : 'User not found'})
     
     return {'status' : True}
