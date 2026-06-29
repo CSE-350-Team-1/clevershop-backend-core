@@ -55,7 +55,9 @@ def test_verify_rbac_calls_db_function(monkeypatch):
         assert cursor is conn.cursor_obj
         return True
 
-    monkeypatch.setattr(core, "db_rbac_check", AsyncMock(side_effect=fake_db_rbac_check))
+    monkeypatch.setattr(
+        core, "db_rbac_check", AsyncMock(side_effect=fake_db_rbac_check)
+    )
 
     assert asyncio.run(core.verify_rbac("alice", "Manipulate_self")) is True
     conn.commit.assert_called_once()
@@ -90,12 +92,9 @@ def test_sign_up_delegates_to_db_sign_up(monkeypatch):
 
     monkeypatch.setattr(core, "db_sign_up", AsyncMock(side_effect=fake_db_sign_up))
 
-    assert (
-        asyncio.run(
-            core.sign_up(
-                {"username": "carol", "email": "carol@example.com", "password": "secret"}
-            )
+    assert asyncio.run(
+        core.sign_up(
+            {"username": "carol", "email": "carol@example.com", "password": "secret"}
         )
-        == {"status": True}
-    )
+    ) == {"status": True}
     conn.commit.assert_called_once()

@@ -47,58 +47,56 @@ async def db_sign_up(credentials, cursor):
 
     response["username"] = response["email"] = response["status"] = True
 
-    cursor.execute(f"insert into People(username, email, password, role) values(%s, %s, %s, %s)", (credentials.get('username'), credentials.get('email'), credentials.get('password'), credentials.get('role')))
+    cursor.execute(
+        f"insert into People(username, email, password, role) values(%s, %s, %s, %s)",
+        (
+            credentials.get("username"),
+            credentials.get("email"),
+            credentials.get("password"),
+            credentials.get("role"),
+        ),
+    )
     return response
 
 
 async def db_change_own_email(credentials, cursor) -> bool:
     cursor.execute(
-        f"select * from People where email = %s", (credentials.get('email'),)
+        f"select * from People where email = %s", (credentials.get("email"),)
     )
     for row in cursor:
         return False
-    
+
     cursor.execute(
-        f"update People set email = %s where username = %s", (credentials.get('email'), credentials.get('username'))
+        f"update People set email = %s where username = %s",
+        (credentials.get("email"), credentials.get("username")),
     )
 
     return True
 
 
 async def db_delete_own_account(username, cursor):
-    cursor.execute(
-        f"delete from List_Items where username = %s", (username,)
-    )
+    cursor.execute(f"delete from List_Items where username = %s", (username,))
 
-    cursor.execute(
-        f"delete from Lists where username = %s", (username,)
-    )
+    cursor.execute(f"delete from Lists where username = %s", (username,))
 
-    cursor.execute(
-        f"delete from People where username = %s", (username,)
-    )
+    cursor.execute(f"delete from People where username = %s", (username,))
 
 
 async def db_delete_user(username, cursor):
-    cursor.execute(f"select * from People where username = %s and role = 'User'", (username,))
+    cursor.execute(
+        f"select * from People where username = %s and role = 'User'", (username,)
+    )
     found_flag = False
     for row in cursor:
         found_flag = True
 
     if found_flag:
-        cursor.execute(
-            f"delete from List_Items where username = %s", (username,)
-        )
+        cursor.execute(f"delete from List_Items where username = %s", (username,))
 
-        cursor.execute(
-            f"delete from Lists where username = %s", (username,)
-        )
+        cursor.execute(f"delete from Lists where username = %s", (username,))
 
-        cursor.execute(
-            f"delete from People where username = %s", (username,)
-        )
+        cursor.execute(f"delete from People where username = %s", (username,))
 
-        return {'status' : True}
-    
-    return {'status' : False}
-    
+        return {"status": True}
+
+    return {"status": False}

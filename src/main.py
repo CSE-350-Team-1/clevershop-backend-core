@@ -3,7 +3,14 @@ import uuid
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from src.core import sign_in, sign_up, verify_rbac, change_own_email, delete_own_account, delete_user
+from src.core import (
+    sign_in,
+    sign_up,
+    verify_rbac,
+    change_own_email,
+    delete_own_account,
+    delete_user,
+)
 from src.middleware.authorization_middleware import (
     create_session,
     end_session,
@@ -124,7 +131,13 @@ async def account_sign_in(
         not isinstance(input_credentials, dict)
         or "username" not in input_credentials
         or "password" not in input_credentials
-        or not all(item != "" for item in [input_credentials.get("username"), input_credentials.get("password")])
+        or not all(
+            item != ""
+            for item in [
+                input_credentials.get("username"),
+                input_credentials.get("password"),
+            ]
+        )
     ):
         return JSONResponse(
             status_code=400,
@@ -155,9 +168,11 @@ async def account_sign_up(
 
     sign_up_payload = await request.json()
     required_fields = {"email", "username", "password"}
-    if not isinstance(sign_up_payload, dict) or not required_fields.issubset(
-        sign_up_payload.keys()
-    ) or not all(item != "" for item in sign_up_payload.values()):
+    if (
+        not isinstance(sign_up_payload, dict)
+        or not required_fields.issubset(sign_up_payload.keys())
+        or not all(item != "" for item in sign_up_payload.values())
+    ):
         return JSONResponse(
             status_code=400,
             content={
@@ -165,7 +180,7 @@ async def account_sign_up(
             },
         )
 
-    sign_up_payload['role'] = 'User'
+    sign_up_payload["role"] = "User"
     sign_up_result = await sign_up(sign_up_payload)
 
     return sign_up_result
@@ -188,16 +203,29 @@ async def account_change_own_email(request: Request) -> dict:
 
     change_own_email_payload = await request.json()
 
-    if not isinstance(change_own_email_payload, dict) or not {'email'}.issubset(change_own_email_payload) or change_own_email_payload.get('email') == '':
-        return JSONResponse(status_code= 400, content = {'error' : 'Invalid payload; expected JSON{email: str} with non-empty values'})
+    if (
+        not isinstance(change_own_email_payload, dict)
+        or not {"email"}.issubset(change_own_email_payload)
+        or change_own_email_payload.get("email") == ""
+    ):
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": "Invalid payload; expected JSON{email: str} with non-empty values"
+            },
+        )
 
-    change_own_email_result = await change_own_email({'username' : request.state.username, 'email' : change_own_email_payload.get('email')})
+    change_own_email_result = await change_own_email(
+        {
+            "username": request.state.username,
+            "email": change_own_email_payload.get("email"),
+        }
+    )
 
     if change_own_email_result is False:
-        return JSONResponse(status_code = 409, content = {'error' : 'Email already exists'})
-    
-    return {'status' : True}
+        return JSONResponse(status_code=409, content={"error": "Email already exists"})
 
+    return {"status": True}
 
 
 @app.post("/account/delete_own_account")
@@ -206,7 +234,7 @@ async def account_delete_own_account(request: Request):
 
     await delete_own_account(request.state.username)
 
-    return {'status' : True}
+    return {"status": True}
 
 
 @app.post("/account/add_user")
@@ -219,22 +247,24 @@ async def account_add_user(request: Request):
     add_user_payload = await request.json()
 
     required_fields = {"email", "username", "password"}
-    if not isinstance(add_user_payload, dict) or not required_fields.issubset(
-        add_user_payload.keys()
-    ) or not all(item != "" for item in add_user_payload.values()):
+    if (
+        not isinstance(add_user_payload, dict)
+        or not required_fields.issubset(add_user_payload.keys())
+        or not all(item != "" for item in add_user_payload.values())
+    ):
         return JSONResponse(
             status_code=400,
             content={
                 "error": "Invalid payload; expected JSON{email: str, username: str, password: str} with non-empty values"
             },
         )
-    
-    add_user_payload['role'] = 'User'
-    add_user_payload_return = await sign_up(credentials = add_user_payload)
 
-    if add_user_payload_return.get('status') == False:
-        return JSONResponse(status_code=409, content = add_user_payload_return)
-    
+    add_user_payload["role"] = "User"
+    add_user_payload_return = await sign_up(add_user_payload)
+
+    if add_user_payload_return.get("status") == False:
+        return JSONResponse(status_code=409, content=add_user_payload_return)
+
     return add_user_payload_return
 
 
@@ -245,17 +275,18 @@ async def account_delete_user(request: Request):
 
     delete_user_payload = await request.json()
 
-    if (not isinstance(delete_user_payload, dict) or not {"username"}.issubset(delete_user_payload.keys())) or delete_user_payload.get('username') == '':
+    if (
+        not isinstance(delete_user_payload, dict)
+        or not {"username"}.issubset(delete_user_payload.keys())
+    ) or delete_user_payload.get("username") == "":
         return JSONResponse(
             status_code=400,
-            content={
-                "error": "Invalid payload; expected JSON{username: str}"
-            },
+            content={"error": "Invalid payload; expected JSON{username: str}"},
         )
-    
-    delete_user_response = await delete_user(delete_user_payload.get('username'))
 
-    if delete_user_response.get('status') == False:
-        return JSONResponse(status_code = 404, content = {'error' : 'User not found'})
-    
-    return {'status' : True}
+    delete_user_response = await delete_user(delete_user_payload.get("username"))
+
+    if delete_user_response.get("status") == False:
+        return JSONResponse(status_code=404, content={"error": "User not found"})
+
+    return {"status": True}
