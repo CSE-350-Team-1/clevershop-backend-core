@@ -18,6 +18,8 @@ REQUIRED_ENDPOINT_PERMS = {
     "/service/get_items": [],
     "/service/list_own_lists": ["Manipulate_self"],
     "/service/get_own_list": ["Manipulate_self"],
+    "/service/add_own_list": ["Manipulate_self"],
+    "/service/remove_own_list": ["Manipulate_self"],
     "/service/add_own_item": ["Manipulate_self"],
     "/service/remove_own_item": ["Manipulate_self"],
     "/service/list_user_lists": ["Manipulate_user"],
