@@ -243,3 +243,579 @@ def test_delete_user_not_found_returns_404(monkeypatch):
 
     assert response.status_code == 404
     assert response.json() == {"error": "User not found"}
+
+
+def test_get_items_requires_authorization(client: TestClient):
+    response = client.post("/service/get_items")
+    assert response.status_code == 401
+
+
+def test_get_items_succeeds_with_valid_token(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    async def fake_get_items():
+        return ["Item1", "Item2", "Item3"]
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+    monkeypatch.setattr(main, "get_items", fake_get_items)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/get_items",
+        headers={"Authorization": token},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == ["Item1", "Item2", "Item3"]
+
+
+def test_list_own_lists_requires_authorization(client: TestClient):
+    response = client.post("/service/list_own_lists")
+    assert response.status_code == 401
+
+
+def test_list_own_lists_succeeds_with_valid_token(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    async def fake_list_own_lists(username):
+        if username == "user1":
+            return ["Shopping", "ToDo"]
+        return []
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+    monkeypatch.setattr(main, "list_own_lists", fake_list_own_lists)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/list_own_lists",
+        headers={"Authorization": token},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == ["Shopping", "ToDo"]
+
+
+def test_list_own_lists_returns_empty_list(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    async def fake_list_own_lists(username):
+        return []
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+    monkeypatch.setattr(main, "list_own_lists", fake_list_own_lists)
+
+    token = asyncio.run(create_session("newuser"))
+    response = TestClient(main.app).post(
+        "/service/list_own_lists",
+        headers={"Authorization": token},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_get_own_list_requires_authorization(client: TestClient):
+    response = client.post(
+        "/service/get_own_list",
+        json={"list": "Shopping"},
+    )
+    assert response.status_code == 401
+
+
+def test_get_own_list_rejects_missing_list_field(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/get_own_list",
+        headers={"Authorization": token},
+        json={"wrong_field": "Shopping"},
+    )
+
+    assert response.status_code == 400
+    assert "Invalid payload" in response.json()["error"]
+
+
+def test_get_own_list_rejects_empty_list_field(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/get_own_list",
+        headers={"Authorization": token},
+        json={"list": ""},
+    )
+
+    assert response.status_code == 400
+    assert "Invalid payload" in response.json()["error"]
+
+
+def test_get_own_list_rejects_non_dict_payload(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/get_own_list",
+        headers={"Authorization": token},
+        json="not a dict",
+    )
+
+    assert response.status_code == 400
+
+
+def test_get_own_list_succeeds_with_valid_payload(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    async def fake_get_own_list(credentials):
+        return [["milk", False], ["bread", True]]
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+    monkeypatch.setattr(main, "get_own_list", fake_get_own_list)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/get_own_list",
+        headers={"Authorization": token},
+        json={"list": "Shopping"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == [["milk", False], ["bread", True]]
+
+
+def test_get_own_list_not_found_returns_404(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    async def fake_get_own_list(credentials):
+        return {"status": False}
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+    monkeypatch.setattr(main, "get_own_list", fake_get_own_list)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/get_own_list",
+        headers={"Authorization": token},
+        json={"list": "NonexistentList"},
+    )
+
+    assert response.status_code == 404
+    assert response.json() == {"error": "List not found"}
+
+
+def test_add_own_list_requires_authorization(client: TestClient):
+    response = client.post(
+        "/service/add_own_list",
+        json={"list": "NewList"},
+    )
+    assert response.status_code == 401
+
+
+def test_add_own_list_rejects_missing_list_field(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/add_own_list",
+        headers={"Authorization": token},
+        json={"wrong_field": "NewList"},
+    )
+
+    assert response.status_code == 400
+    assert "Invalid payload" in response.json()["error"]
+
+
+def test_add_own_list_rejects_empty_list_field(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/add_own_list",
+        headers={"Authorization": token},
+        json={"list": ""},
+    )
+
+    assert response.status_code == 400
+    assert "Invalid payload" in response.json()["error"]
+
+
+def test_add_own_list_succeeds_with_valid_payload(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    async def fake_add_own_list(credentials):
+        return {"status": True}
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+    monkeypatch.setattr(main, "add_own_list", fake_add_own_list)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/add_own_list",
+        headers={"Authorization": token},
+        json={"list": "NewList"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"status": True}
+
+
+def test_add_own_list_conflict_returns_409(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    async def fake_add_own_list(credentials):
+        return {"status": False}
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+    monkeypatch.setattr(main, "add_own_list", fake_add_own_list)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/add_own_list",
+        headers={"Authorization": token},
+        json={"list": "ExistingList"},
+    )
+
+    assert response.status_code == 409
+    assert response.json() == {"error": "List already exists"}
+
+
+def test_remove_own_list_requires_authorization(client: TestClient):
+    response = client.post(
+        "/service/remove_own_list",
+        json={"list": "ListToDelete"},
+    )
+    assert response.status_code == 401
+
+
+def test_remove_own_list_rejects_missing_list_field(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/remove_own_list",
+        headers={"Authorization": token},
+        json={"wrong_field": "ListToDelete"},
+    )
+
+    assert response.status_code == 400
+    assert "Invalid payload" in response.json()["error"]
+
+
+def test_remove_own_list_rejects_empty_list_field(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/remove_own_list",
+        headers={"Authorization": token},
+        json={"list": ""},
+    )
+
+    assert response.status_code == 400
+    assert "Invalid payload" in response.json()["error"]
+
+
+def test_remove_own_list_succeeds_with_valid_payload(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    async def fake_remove_own_list(credentials):
+        return {"status": True}
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+    monkeypatch.setattr(main, "remove_own_list", fake_remove_own_list)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/remove_own_list",
+        headers={"Authorization": token},
+        json={"list": "ListToDelete"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"status": True}
+
+
+def test_remove_own_list_not_found_returns_404(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    async def fake_remove_own_list(credentials):
+        return {"status": False}
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+    monkeypatch.setattr(main, "remove_own_list", fake_remove_own_list)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/remove_own_list",
+        headers={"Authorization": token},
+        json={"list": "NonexistentList"},
+    )
+
+    assert response.status_code == 404
+    assert response.json() == {"error": "List not found"}
+
+
+def test_add_own_item_requires_authorization(client: TestClient):
+    response = client.post(
+        "/service/add_own_item",
+        json={"list": "Shopping", "item": "milk"},
+    )
+    assert response.status_code == 401
+
+
+def test_add_own_item_rejects_missing_list_field(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/add_own_item",
+        headers={"Authorization": token},
+        json={"item": "milk"},
+    )
+
+    assert response.status_code == 400
+    assert "Invalid payload" in response.json()["error"]
+
+
+def test_add_own_item_rejects_missing_item_field(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/add_own_item",
+        headers={"Authorization": token},
+        json={"list": "Shopping"},
+    )
+
+    assert response.status_code == 400
+    assert "Invalid payload" in response.json()["error"]
+
+
+def test_add_own_item_rejects_empty_list_field(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/add_own_item",
+        headers={"Authorization": token},
+        json={"list": "", "item": "milk"},
+    )
+
+    assert response.status_code == 400
+    assert "Invalid payload" in response.json()["error"]
+
+
+def test_add_own_item_rejects_empty_item_field(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/add_own_item",
+        headers={"Authorization": token},
+        json={"list": "Shopping", "item": ""},
+    )
+
+    assert response.status_code == 400
+    assert "Invalid payload" in response.json()["error"]
+
+
+def test_add_own_item_succeeds_with_valid_payload(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    async def fake_add_own_item(credentials):
+        return {"status": True}
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+    monkeypatch.setattr(main, "add_own_item", fake_add_own_item)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/add_own_item",
+        headers={"Authorization": token},
+        json={"list": "Shopping", "item": "milk"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"status": True}
+
+
+def test_add_own_item_not_found_returns_404(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    async def fake_add_own_item(credentials):
+        return {"status": False}
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+    monkeypatch.setattr(main, "add_own_item", fake_add_own_item)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/add_own_item",
+        headers={"Authorization": token},
+        json={"list": "Shopping", "item": "milk"},
+    )
+
+    assert response.status_code == 404
+    assert response.json() == {"error": "List or item not found"}
+
+
+def test_remove_own_item_requires_authorization(client: TestClient):
+    response = client.post(
+        "/service/remove_own_item",
+        json={"list": "Shopping", "item": "milk"},
+    )
+    assert response.status_code == 401
+
+
+def test_remove_own_item_rejects_missing_list_field(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/remove_own_item",
+        headers={"Authorization": token},
+        json={"item": "milk"},
+    )
+
+    assert response.status_code == 400
+    assert "Invalid payload" in response.json()["error"]
+
+
+def test_remove_own_item_rejects_missing_item_field(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/remove_own_item",
+        headers={"Authorization": token},
+        json={"list": "Shopping"},
+    )
+
+    assert response.status_code == 400
+    assert "Invalid payload" in response.json()["error"]
+
+
+def test_remove_own_item_rejects_empty_list_field(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/remove_own_item",
+        headers={"Authorization": token},
+        json={"list": "", "item": "milk"},
+    )
+
+    assert response.status_code == 400
+    assert "Invalid payload" in response.json()["error"]
+
+
+def test_remove_own_item_rejects_empty_item_field(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/remove_own_item",
+        headers={"Authorization": token},
+        json={"list": "Shopping", "item": ""},
+    )
+
+    assert response.status_code == 400
+    assert "Invalid payload" in response.json()["error"]
+
+
+def test_remove_own_item_succeeds_with_valid_payload(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    async def fake_remove_own_item(credentials):
+        return {"status": True}
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+    monkeypatch.setattr(main, "remove_own_item", fake_remove_own_item)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/remove_own_item",
+        headers={"Authorization": token},
+        json={"list": "Shopping", "item": "milk"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"status": True}
+
+
+def test_remove_own_item_not_found_returns_404(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    async def fake_remove_own_item(credentials):
+        return {"status": False}
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+    monkeypatch.setattr(main, "remove_own_item", fake_remove_own_item)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/service/remove_own_item",
+        headers={"Authorization": token},
+        json={"list": "Shopping", "item": "milk"},
+    )
+
+    assert response.status_code == 404
+    assert response.json() == {"error": "List or item not found"}
