@@ -23,7 +23,9 @@ class DummyCursor:
 
 def test_db_rbac_check_allows_permitted_task():
     cursor = DummyCursor(username_rows=[("Manager",)])
-    assert asyncio.run(account.db_rbac_check("alice", "Manipulate_user", cursor)) is True
+    assert (
+        asyncio.run(account.db_rbac_check("alice", "Manipulate_user", cursor)) is True
+    )
 
 
 def test_db_rbac_check_refuses_forbidden_task():
@@ -33,12 +35,22 @@ def test_db_rbac_check_refuses_forbidden_task():
 
 def test_db_sign_in_returns_true_when_user_exists():
     cursor = DummyCursor(username_rows=[("alice", "password")])
-    assert asyncio.run(account.db_sign_in({"username": "alice", "password": "password"}, cursor)) is True
+    assert (
+        asyncio.run(
+            account.db_sign_in({"username": "alice", "password": "password"}, cursor)
+        )
+        is True
+    )
 
 
 def test_db_sign_in_returns_false_when_user_missing():
     cursor = DummyCursor()
-    assert asyncio.run(account.db_sign_in({"username": "bob", "password": "secret"}, cursor)) is False
+    assert (
+        asyncio.run(
+            account.db_sign_in({"username": "bob", "password": "secret"}, cursor)
+        )
+        is False
+    )
 
 
 def test_db_sign_up_rejects_existing_username_or_email():

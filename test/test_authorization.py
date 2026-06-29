@@ -28,7 +28,9 @@ def test_validate_token_for_existing_session():
 
 
 def test_validate_token_rejects_missing_session():
-    ok, username = asyncio.run(auth_mod.validate_token("00000000-0000-0000-0000-000000000000"))
+    ok, username = asyncio.run(
+        auth_mod.validate_token("00000000-0000-0000-0000-000000000000")
+    )
     assert ok is False
     assert username == ""
 

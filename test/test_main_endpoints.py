@@ -69,3 +69,177 @@ def test_sign_out_succeeds_with_valid_token():
     assert response.status_code == 200
     assert response.json() == {"Status": True}
     assert token not in _sessions
+
+
+def test_change_own_email_requires_authorization(client: TestClient):
+    response = client.post(
+        "/account/change_own_email", json={"email": "new@example.com"}
+    )
+    assert response.status_code == 401
+
+
+def test_change_own_email_succeeds_with_valid_token(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    async def fake_change_own_email(payload):
+        return True
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+    monkeypatch.setattr(main, "change_own_email", fake_change_own_email)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/account/change_own_email",
+        headers={"Authorization": token},
+        json={"email": "new@example.com"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"status": True}
+
+
+def test_change_own_email_conflict_returns_409(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    async def fake_change_own_email(payload):
+        return False
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+    monkeypatch.setattr(main, "change_own_email", fake_change_own_email)
+
+    token = asyncio.run(create_session("user1"))
+    response = TestClient(main.app).post(
+        "/account/change_own_email",
+        headers={"Authorization": token},
+        json={"email": "new@example.com"},
+    )
+
+    assert response.status_code == 409
+    assert response.json() == {"error": "Email already exists"}
+
+
+def test_delete_own_account_requires_authorization(client: TestClient):
+    response = client.post("/account/delete_own_account")
+    assert response.status_code == 401
+
+
+def test_delete_own_account_succeeds_with_valid_token(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    async def fake_delete_own_account(username):
+        return None
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+    monkeypatch.setattr(main, "delete_own_account", fake_delete_own_account)
+
+    token = asyncio.run(create_session("user2"))
+    response = TestClient(main.app).post(
+        "/account/delete_own_account",
+        headers={"Authorization": token},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"status": True}
+
+
+def test_add_user_requires_authorization(client: TestClient):
+    response = client.post(
+        "/account/add_user",
+        json={"username": "user3", "email": "user3@example.com", "password": "pass"},
+    )
+    assert response.status_code == 401
+
+
+def test_add_user_succeeds_with_valid_token(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    async def fake_sign_up(payload):
+        return {"status": True}
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+    monkeypatch.setattr(main, "sign_up", fake_sign_up)
+
+    token = asyncio.run(create_session("manager1"))
+    response = TestClient(main.app).post(
+        "/account/add_user",
+        headers={"Authorization": token},
+        json={"username": "user3", "email": "user3@example.com", "password": "pass"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"status": True}
+
+
+def test_add_user_conflict_returns_409(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    async def fake_sign_up(payload):
+        return {"status": False, "error": "Username already exists"}
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+    monkeypatch.setattr(main, "sign_up", fake_sign_up)
+
+    token = asyncio.run(create_session("manager1"))
+    response = TestClient(main.app).post(
+        "/account/add_user",
+        headers={"Authorization": token},
+        json={"username": "user3", "email": "user3@example.com", "password": "pass"},
+    )
+
+    assert response.status_code == 409
+    assert response.json() == {"status": False, "error": "Username already exists"}
+
+
+def test_delete_user_requires_authorization(client: TestClient):
+    response = client.post(
+        "/account/delete_user",
+        json={"username": "user4"},
+    )
+    assert response.status_code == 401
+
+
+def test_delete_user_succeeds_with_valid_token(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    async def fake_delete_user(username):
+        return {"status": True}
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+    monkeypatch.setattr(main, "delete_user", fake_delete_user)
+
+    token = asyncio.run(create_session("manager1"))
+    response = TestClient(main.app).post(
+        "/account/delete_user",
+        headers={"Authorization": token},
+        json={"username": "user4"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"status": True}
+
+
+def test_delete_user_not_found_returns_404(monkeypatch):
+    async def fake_verify_rbac(username, permission):
+        return True
+
+    async def fake_delete_user(username):
+        return {"status": False}
+
+    monkeypatch.setattr(main, "verify_rbac", fake_verify_rbac)
+    monkeypatch.setattr(main, "delete_user", fake_delete_user)
+
+    token = asyncio.run(create_session("manager1"))
+    response = TestClient(main.app).post(
+        "/account/delete_user",
+        headers={"Authorization": token},
+        json={"username": "user4"},
+    )
+
+    assert response.status_code == 404
+    assert response.json() == {"error": "User not found"}
