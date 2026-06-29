@@ -2,7 +2,7 @@ import asyncio
 import os
 import psycopg
 
-from src.tools.account import db_rbac_check, db_sign_in, db_sign_up, db_change_own_email, db_delete_own_account
+from src.tools.account import db_rbac_check, db_sign_in, db_sign_up, db_change_own_email, db_delete_own_account, db_delete_user
 from src.errors.errors import DBError
 
 conn_str = None
@@ -62,3 +62,9 @@ async def change_own_email(cursor, credentials : dict) -> bool:
 @db_operation
 async def delete_own_account(cursor, username: str):
     await db_delete_own_account(username, cursor)
+
+
+@db_operation
+async def delete_user(cursor, username: str) -> dict:
+    return await db_delete_user(username, cursor)
+

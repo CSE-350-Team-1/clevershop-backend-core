@@ -77,5 +77,28 @@ async def db_delete_own_account(username, cursor):
     cursor.execute(
         f"delete from People where username = %s", (username)
     )
-    
 
+
+async def db_delete_user(username, cursor):
+    cursor.execute(f"select * from People where username = %s and role = 'User'", (username))
+    found_flag = False
+    for row in cursor:
+        found_flag = True
+
+    if found_flag:
+        cursor.execute(
+            f"delete from List_Items where username = %s", (username)
+        )
+
+        cursor.execute(
+            f"delete from Lists where username = %s", (username)
+        )
+
+        cursor.execute(
+            f"delete from People where username = %s", (username)
+        )
+
+        return {'status' : True}
+    
+    return {'status' : False}
+    
