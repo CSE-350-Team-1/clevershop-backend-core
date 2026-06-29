@@ -14,6 +14,9 @@ from src.core import (
     list_own_lists,
     get_own_list,
     add_own_list,
+    remove_own_list,
+    add_own_item,
+    remove_own_item,
 )
 from src.middleware.authorization_middleware import (
     create_session,
@@ -285,7 +288,9 @@ async def account_delete_user(request: Request):
     ) or delete_user_payload.get("username") == "":
         return JSONResponse(
             status_code=400,
-            content={"error": "Invalid payload; expected JSON{username: str} with non-empty values"},
+            content={
+                "error": "Invalid payload; expected JSON{username: str} with non-empty values"
+            },
         )
 
     delete_user_response = await delete_user(delete_user_payload.get("username"))
@@ -296,33 +301,47 @@ async def account_delete_user(request: Request):
     return {"status": True}
 
 
-@app.get("/service/get_items")
+@app.post("/service/get_items")
 async def service_get_items(request: Request) -> list[str]:
     """No payload"""
     return await get_items()
 
 
-@app.get("/service/list_own_lists")
+@app.post("/service/list_own_lists")
 async def service_list_own_lists(request: Request) -> list[str]:
     """No payload"""
     return await list_own_lists(request.state.username)
 
-@app.get("/service/get_own_list")
+
+@app.post("/service/get_own_list")
 async def service_get_own_list(request: Request) -> list[list]:
     """Requires JSON
     list: str
 
-    returns list of lists. Every entry in the bigger list is a list containing a name (str) and bought (bool) (always false for now)"""
-    
+    returns list of lists. Every entry in the bigger list is a list containing a name (str) and bought (bool) (always false for now)
+    """
+
     get_own_list_payload = await request.json()
 
-    if not isinstance(get_own_list_payload, dict) or {"list"}.issubset(get_own_list_payload.keys()) or get_own_list_payload.get('list') == '':
-        return JSONResponse(status_code = 400, content = {"error" : "Invalid payload; expected JSON{list: str} with non-empty values"})
-    
-    get_own_list_result = await get_own_list({'list' : get_own_list_payload.get('list'), 'username' : request.state.username})
+    if (
+        not isinstance(get_own_list_payload, dict)
+        or not {"list"}.issubset(get_own_list_payload.keys())
+        or get_own_list_payload.get("list") == ""
+    ):
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": "Invalid payload; expected JSON{list: str} with non-empty values"
+            },
+        )
 
-    if get_own_list_result.get('status') == False:
-        return JSONResponse(status_code = 404, content = {"error" : "List not found"})
+    get_own_list_payload["username"] = request.state.username
+    get_own_list_result = await get_own_list(get_own_list_payload)
+
+    if isinstance(get_own_list_result, dict) and get_own_list_result.get("status") == False:
+        return JSONResponse(status_code=404, content={"error": "List not found"})
+
+    return get_own_list_result
 
 
 @app.post("/service/add_own_list")
@@ -333,18 +352,120 @@ async def service_add_own_list(request: Request) -> dict:
 
     add_own_list_payload = await request.json()
 
-    if not isinstance(add_own_list_payload, dict) or {"list"}.issubset(add_own_list_payload.keys()) or add_own_list_payload.get('list') == '':
-        return JSONResponse(status_code = 400, content = {"error" : "Invalid payload; expected JSON{list: str} with non-empty values"})
-    
-    add_own_list_result = await add_own_list({'list' : add_own_list_payload.get('list'), 'username': request.state.username})
+    if (
+        not isinstance(add_own_list_payload, dict)
+        or not {"list"}.issubset(add_own_list_payload.keys())
+        or add_own_list_payload.get("list") == ""
+    ):
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": "Invalid payload; expected JSON{list: str} with non-empty values"
+            },
+        )
 
-    if add_own_list_result.get('status') == False:
-        return JSONResponse(status_code = 409, content = {"error" : "List already exists"})
-    
+    add_own_list_payload["username"] = request.state.username
+    add_own_list_result = await add_own_list(add_own_list_payload)
+
+    if add_own_list_result.get("status") == False:
+        return JSONResponse(status_code=409, content={"error": "List already exists"})
+
     return add_own_list_result
 
-#TODO:
-# update the rbac file with different perms for adding and removing lists
-# add function to remove own lists, add own items, and remove own items
+
+@app.post("/service/remove_own_list")
+async def service_remove_own_list(request: Request) -> dict:
+    """Requires JSON
+    list:
+    """
+
+    remove_own_list_payload = await request.json()
+
+    if (
+        not isinstance(remove_own_list_payload, dict)
+        or not {"list"}.issubset(remove_own_list_payload.keys())
+        or remove_own_list_payload.get("list") == ""
+    ):
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": "Invalid payload; expected JSON{list: str} with non-empty values"
+            },
+        )
+
+    remove_own_list_payload["username"] = request.state.username
+    remove_own_list_result = await remove_own_list(remove_own_list_payload)
+
+    if remove_own_list_result.get("status") == False:
+        return JSONResponse(status_code=404, content={"error": "List not found"})
+
+    return remove_own_list_result
+
+
+@app.post("/service/add_own_item")
+async def service_add_own_item(request: Request) -> dict:
+    """Requires JSON
+    list:
+    item:
+    """
+
+    add_own_item_payload = await request.json()
+
+    if (
+        not isinstance(add_own_item_payload, dict)
+        or not {"list", "item"}.issubset(add_own_item_payload.keys())
+        or not all(item != "" for item in add_own_item_payload.values())
+    ):
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": "Invalid payload; expected JSON{list: str, item: str} with non-empty values"
+            },
+        )
+
+    add_own_item_payload["username"] = request.state.username
+    add_own_item_result = await add_own_item(add_own_item_payload)
+
+    if add_own_item_result.get("status") == False:
+        return JSONResponse(
+            status_code=404, content={"error": "List or item not found"}
+        )
+
+    return add_own_item_result
+
+
+@app.post("/service/remove_own_item")
+async def service_remove_own_item(request: Request) -> dict:
+    """Requires JSON
+    list:
+    item:
+    """
+
+    remove_own_item_payload = await request.json()
+
+    if (
+        not isinstance(remove_own_item_payload, dict)
+        or not {"list", "item"}.issubset(remove_own_item_payload.keys())
+        or not all(item != "" for item in remove_own_item_payload.values())
+    ):
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": "Invalid payload; expected JSON{list: str, item: str} with non-empty values"
+            },
+        )
+
+    remove_own_item_payload["username"] = request.state.username
+    remove_own_item_result = await remove_own_item(remove_own_item_payload)
+
+    if remove_own_item_result.get("status") == False:
+        return JSONResponse(
+            status_code=404, content={"error": "List or item not found"}
+        )
+
+    return remove_own_item_result
+
+
+# TODO:
 # add tests
 # remaining service endpoint work can be completed later

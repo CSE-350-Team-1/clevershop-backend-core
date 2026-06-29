@@ -60,9 +60,7 @@ async def db_sign_up(credentials, cursor):
 
 
 async def db_change_own_email(credentials, cursor) -> bool:
-    cursor.execute(
-        "select * from People where email = %s", (credentials.get("email"),)
-    )
+    cursor.execute("select * from People where email = %s", (credentials.get("email"),))
     for row in cursor:
         return False
 

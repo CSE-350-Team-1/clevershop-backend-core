@@ -15,6 +15,9 @@ from src.tools.service import (
     db_list_own_lists,
     db_get_own_list,
     db_add_own_list,
+    db_remove_own_list,
+    db_add_own_item,
+    db_remove_own_item,
 )
 from src.errors.errors import DBError
 
@@ -88,7 +91,7 @@ async def get_items(cursor) -> list[str]:
 
 
 @db_operation
-async def list_own_lists(cursor, username : str) -> list[str]:
+async def list_own_lists(cursor, username: str) -> list[str]:
     return await db_list_own_lists(username, cursor)
 
 
@@ -96,6 +99,22 @@ async def list_own_lists(cursor, username : str) -> list[str]:
 async def get_own_list(cursor, credentials) -> list[list]:
     return await db_get_own_list(credentials, cursor)
 
+
 @db_operation
-async def add_own_list(cursor, credentials : dict) -> dict:
-    return await db_add_own_list
+async def add_own_list(cursor, credentials: dict) -> dict:
+    return await db_add_own_list(credentials, cursor)
+
+
+@db_operation
+async def remove_own_list(cursor, credentials: dict) -> dict:
+    return await db_remove_own_list(credentials, cursor)
+
+
+@db_operation
+async def add_own_item(cursor, credentials: dict) -> dict:
+    return await db_add_own_item(credentials, cursor)
+
+
+@db_operation
+async def remove_own_item(cursor, credentials: dict) -> dict:
+    return await db_remove_own_item(credentials, cursor)

@@ -24,9 +24,16 @@ async def db_list_own_lists(username, cursor) -> list[str]:
 
     return return_list
 
+
 async def db_get_own_list(credentials, cursor) -> list[list]:
     return_list = []
-    cursor.execute("select (item_name, bought) from list_items where username = %s and list_name = %s", (credentials.get('username'), credentials.get('list'),))
+    cursor.execute(
+        "select (item_name, bought) from list_items where username = %s and list_name = %s",
+        (
+            credentials.get("username"),
+            credentials.get("list"),
+        ),
+    )
 
     found_flag = False
     for row in cursor:
@@ -35,8 +42,8 @@ async def db_get_own_list(credentials, cursor) -> list[list]:
         return_list.append([row[0], row[1]])
 
     if not found_flag:
-        return {'status' : False}
-    
+        return {"status": False}
+
     return return_list
 
 
@@ -55,4 +62,99 @@ async def db_add_own_list(credentials, cursor) -> dict:
         (credentials.get("username"), credentials.get("list"), current_date),
     )
 
-    
+
+async def db_remove_own_list(credentials, cursor) -> dict:
+    cursor.execute(
+        "select * from lists where username = %s and list_name = %s",
+        (
+            credentials.get("username"),
+            credentials.get("list"),
+        ),
+    )
+
+    exist_flag = False
+
+    for row in cursor:
+        exist_flag = True
+
+    if not exist_flag:
+        return {"status": False}
+
+    cursor.execute(
+        "delete from list_items where username = %s and list_name = %s",
+        (
+            credentials.get("username"),
+            credentials.get("list"),
+        ),
+    )
+    cursor.execute(
+        "delete from lists where username = %s and list_name = %s",
+        (
+            credentials.get("username"),
+            credentials.get("list"),
+        ),
+    )
+
+    return {"status": True}
+
+
+async def db_add_own_item(credentials, cursor) -> dict:
+    cursor.execute(
+        "select * from items where item_name = %s", (credentials.get("item"),)
+    )
+
+    exist_flag = False
+
+    for row in cursor:
+        exist_flag = True
+
+    if not exist_flag:
+        return {"status": False}
+
+    cursor.execute(
+        "select * from lists where username = %s and list_name = %s",
+        (
+            credentials.get("username"),
+            credentials.get("list"),
+        ),
+    )
+    exist_flag = False
+
+    for row in cursor:
+        exist_flag = True
+
+    if not exist_flag:
+        return {"status": False}
+
+    cursor.execute(
+        "insert into list_items (item_name, list_name, username, bought) values (%s, %s, %s, false)",
+        (
+            credentials.get("item"),
+            credentials.get("list"),
+            credentials.get("username"),
+        ),
+    )
+
+    return {"status": True}
+
+
+async def db_remove_own_item(credentials, cursor) -> dict:
+    cursor.execute(
+        "select * from list_items where item_name = %s and list_name = %s and username = %s",
+        (credentials.get("item"), credentials.get("list"), credentials.get("username")),
+    )
+
+    exit_flag = False
+
+    for row in cursor:
+        exist_flag = True
+
+    if not exist_flag:
+        return {"status": False}
+
+    cursor.execute(
+        "delete from list_items where item_name = %s and list_name = %s and username = %s",
+        (credentials.get("item"), credentials.get("list"), credentials.get("username")),
+    )
+
+    return {"status": True}
