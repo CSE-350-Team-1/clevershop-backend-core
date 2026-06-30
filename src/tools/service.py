@@ -24,11 +24,11 @@ async def db_list_own_lists(username, cursor) -> list[str]:
 
     return return_list
 
-
+# This function does a db call to get lists, with the correct credentials, and now also gets empty lists.
 async def db_get_own_list(credentials, cursor) -> list[list]:
     return_list = []
     cursor.execute(
-        "select (item_name, bought) from list_items where username = %s and list_name = %s",
+        "SELECT item_name, bought FROM list_items WHERE username = %s AND list_name = %s",
         (
             credentials.get("username"),
             credentials.get("list"),
@@ -38,11 +38,20 @@ async def db_get_own_list(credentials, cursor) -> list[list]:
     found_flag = False
     for row in cursor:
         found_flag = True
-
         return_list.append([row[0], row[1]])
 
     if not found_flag:
-        return {"status": False}
+        # Check if the list exists in the lists table
+        cursor.execute(
+            "SELECT * FROM lists WHERE username = %s AND list_name = %s",
+            (credentials.get("username"), credentials.get("list")),
+        )
+        list_exists = cursor.fetchall()
+
+        if not list_exists:
+            return {"status": False}  # List doesn't exist at all
+        else:
+            return []  # User may create an empty list and could edit it later.
 
     return return_list
 
@@ -61,6 +70,7 @@ async def db_add_own_list(credentials, cursor) -> dict:
         "insert into lists (username, list_name, creation_date) values (%s, %s, %s)",
         (credentials.get("username"), credentials.get("list"), current_date),
     )
+    return {"status": True}
 
 
 async def db_remove_own_list(credentials, cursor) -> dict:

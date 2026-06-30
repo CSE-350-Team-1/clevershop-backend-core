@@ -405,8 +405,8 @@ async def service_remove_own_list(request: Request) -> dict:
 @app.post("/service/add_own_item")
 async def service_add_own_item(request: Request) -> dict:
     """Requires JSON
-    list:
-    item:
+    list: listname
+    item: itemname
     """
 
     add_own_item_payload = await request.json()
